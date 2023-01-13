@@ -67,5 +67,29 @@ def test_deallocate_decrements_available_quantity():
     services.allocate(line, repo, session)
     batch = repo.get(reference="b1")
     assert batch.available_quantity == 90
-    services.deallocate(line, batch, session)
+    services.deallocate(line, repo, session)
     assert batch.available_quantity == 100
+
+
+def test_deallocate_decrements_correct_quantity():
+    repo, session = FakeRepository([]), FakeSession()
+    services.add_batch("b1", "BLUE-PLINTH", 100, None, repo, session)
+    services.add_batch("b2", "RED-PLINTH", 200, None, repo, session)
+    line = model.OrderLine("o1", "BLUE-PLINTH", 10)
+    services.allocate(line, repo, session)
+    blue_batch = repo.get(reference="b1")
+    red_batch = repo.get(reference="b2")
+    assert blue_batch.available_quantity == 90
+    assert red_batch.available_quantity == 200
+    services.deallocate(line, repo, session)
+    assert blue_batch.available_quantity == 100
+    assert red_batch.available_quantity == 200
+
+
+def test_trying_to_deallocate_unallocated_batch():
+    repo, session = FakeRepository([]), FakeSession()
+    services.add_batch("b1", "BLUE-PLINTH", 100, None, repo, session)
+    line = model.OrderLine("o1", "BLUE-PLINTH", 10)
+
+    with pytest.raises(Exception, match="Batch not allocated"):
+        services.deallocate(line, repo, session)

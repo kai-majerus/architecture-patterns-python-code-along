@@ -3,7 +3,6 @@ from datetime import date
 from typing import Optional
 
 from src.allocation.domain import model
-from src.allocation.domain.model import OrderLine, Batch
 from src.allocation.adapters.repository import AbstractRepository
 
 
@@ -15,7 +14,7 @@ def is_valid_sku(sku, batches):
     return sku in {b.sku for b in batches}
 
 
-def allocate(line: OrderLine, repo: AbstractRepository, session) -> str:
+def allocate(line: model.OrderLine, repo: AbstractRepository, session) -> str:
     batches = repo.list()
     if not is_valid_sku(line.sku, batches):
         raise InvalidSku(f"Invalid sku {line.sku}")
@@ -32,6 +31,10 @@ def add_batch(
     session.commit()
 
 
-def deallocate(line: OrderLine, batch: Batch, session) -> str:
-    batch.deallocate(line)
-    session.commit()
+def deallocate(line: model.OrderLine, repo: AbstractRepository, session):
+    for batch in repo.list():
+        if batch.sku == line.sku and line in batch._allocations:
+            batch.deallocate(line)
+            session.commit()
+            return
+    raise Exception("Batch not allocated")

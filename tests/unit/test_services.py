@@ -1,7 +1,6 @@
 import pytest
 
 from src.allocation.service_layer import services, unit_of_work
-from src.allocation.domain import model
 from src.allocation.adapters import repository
 
 

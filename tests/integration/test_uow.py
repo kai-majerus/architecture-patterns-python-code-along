@@ -88,7 +88,7 @@ def try_to_allocate(orderid, sku, exceptions):
         exceptions.append(e)
 
 
-def a_test_concurrent_updates_to_version_are_not_allowed(postgres_session_factory):
+def test_concurrent_updates_to_version_are_not_allowed(postgres_session_factory):
     sku, batch = random_sku(), random_batchref()
     session = postgres_session_factory()
     insert_batch(session, batch, sku, 100, eta=None, product_version=1)

@@ -31,7 +31,7 @@ def post_to_add_batch(ref, sku, qty, eta):
 
 @pytest.mark.usefixtures("postgres_db")
 @pytest.mark.usefixtures("restart_api")
-def a_test_happy_path_returns_201_and_allocated_batch():
+def test_happy_path_returns_201_and_allocated_batch():
     sku, othersku = random_sku(), random_sku("other")
     earlybatch = random_batchref(1)
     laterbatch = random_batchref(2)
@@ -47,7 +47,7 @@ def a_test_happy_path_returns_201_and_allocated_batch():
 
 
 @pytest.mark.usefixtures("restart_api")
-def a_test_unhappy_path_returns_400_and_error_message():
+def test_unhappy_path_returns_400_and_error_message():
     unknown_sku, orderid = random_sku(), random_orderid()
     data = {"orderid": orderid, "sku": unknown_sku, "qty": 20}
     url = config.get_api_url()

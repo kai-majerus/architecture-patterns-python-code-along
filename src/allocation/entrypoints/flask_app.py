@@ -1,8 +1,12 @@
+import os
 import datetime
-from flask import Flask, jsonify, request
+import waitress
+from typing import TypeVar
+from flask import Blueprint, Flask, jsonify, request
+from flask_cors import CORS
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import config
+from src.allocation import config
 from src.allocation.domain import model
 from src.allocation.adapters import orm
 from src.allocation.adapters import repository
@@ -11,10 +15,28 @@ from src.allocation.service_layer import services
 
 orm.start_mappers()
 get_session = sessionmaker(bind=create_engine(config.get_postgres_uri()))
-app = Flask(__name__)
+blueprint = Blueprint("get_campaigns", __name__)
 
 
-@app.route("/allocate", methods=["POST"])
+# Allows create app to be called with arbitrary config objects
+T = TypeVar("T")
+
+
+def create_app() -> None:
+
+    app = Flask(__name__)
+    CORS(app)
+
+    register_blueprints(app)
+
+    waitress.serve(app, host="0.0.0.0", port=os.getenv("PORT", default=8080))
+
+
+def register_blueprints(app: Flask) -> None:
+    app.register_blueprint(blueprint)
+
+
+@blueprint.route("/allocate", methods=["POST"])
 def allocate_endpoint():
     session = get_session()
     repo = repository.SqlAlchemyRepository(session)
@@ -30,13 +52,13 @@ def allocate_endpoint():
     return jsonify({"batchref": batchref}), 201
 
 
-@app.route("/add_batch", methods=["POST"])
+@blueprint.route("/add_batch", methods=["POST"])
 def add_batch():
     session = get_session()
     repo = repository.SqlAlchemyRepository(session)
     eta = request.json["eta"]
     if eta is not None:
-        eta = datetime.fromisoformat(eta).date()
+        eta = datetime.datetime.fromisoformat(eta).date()
     services.add_batch(
         request.json["ref"],
         request.json["sku"],

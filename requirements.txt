@@ -1,6 +1,7 @@
 # app
 sqlalchemy
-flask
+flask==2.0.2
+flask-cors==3.0.10
 psycopg2-binary
 redis
 
@@ -11,3 +12,5 @@ mypy
 pylint
 requests
 tenacity
+
+waitress==2.1.2

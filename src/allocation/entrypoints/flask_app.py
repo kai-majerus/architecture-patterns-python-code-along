@@ -10,7 +10,7 @@ from src.allocation import config
 from src.allocation.domain import model
 from src.allocation.adapters import orm
 from src.allocation.adapters import repository
-from src.allocation.service_layer import services
+from src.allocation.service_layer import services, unit_of_work
 
 
 orm.start_mappers()
@@ -46,7 +46,8 @@ def allocate_endpoint():
         request.json["qty"],
     )
     try:
-        batchref = services.allocate(line, repo, session)
+        uow = unit_of_work.SqlAlchemyUnitOfWork(session_factory=session)
+        batchref = services.allocate(line.orderid, line.sku, line.qty, uow)
     except (model.OutOfStock, services.InvalidSku) as e:
         return jsonify({"message": str(e)}), 400
     return jsonify({"batchref": batchref}), 201
@@ -59,12 +60,12 @@ def add_batch():
     eta = request.json["eta"]
     if eta is not None:
         eta = datetime.datetime.fromisoformat(eta).date()
+    uow = unit_of_work.SqlAlchemyUnitOfWork()
     services.add_batch(
         request.json["ref"],
         request.json["sku"],
         request.json["qty"],
         eta,
-        repo,
-        session,
+        uow,
     )
     return "OK", 201
